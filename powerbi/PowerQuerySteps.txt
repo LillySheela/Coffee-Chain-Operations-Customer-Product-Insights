@@ -1,0 +1,14 @@
+let
+    Source = MySQL.Database("127.0.0.1", "coffeeshop", [ReturnSingleDatabase=true, Query="USE coffeeshop;#(lf)WITH store_index AS (SELECT sales_outlet_id,POSITION("" "" IN store_address) AS ind FROM sales_outlet)#(lf)SELECT #(lf)s.product_ID,#(lf)s.transaction_date,#(lf)p.product,#(lf)p.product_group,#(lf)p.product_category,#(lf)p.product_type,#(lf)SUM(s.quantity) AS quantity,#(lf)ROUND(SUM(s.line_item_amount),2) AS sales,#(lf)s.sales_outlet_id,#(lf)SUBSTRING(so.store_address, s_i.ind+1) AS store_street,#(lf)so.store_city#(lf)FROM sales s JOIN product p#(lf)ON s.product_id=p.product_id#(lf)JOIN sales_outlet so#(lf)ON s.sales_outlet_id=so.sales_outlet_id#(lf)JOIN store_index s_i#(lf)ON s.sales_outlet_id=s_i.sales_outlet_id#(lf)GROUP BY 1,2,3,4,5,6,9,10,11;#(lf)"]),
+    #"Replaced Value" = Table.ReplaceValue(Source," City","",Replacer.ReplaceText,{"store_city"}),
+    #"Merged Columns" = Table.CombineColumns(#"Replaced Value",{"store_street", "store_city"},Combiner.CombineTextByDelimiter(",", QuoteStyle.None),"Outlet"),
+    #"Inserted Week of Month" = Table.AddColumn(#"Merged Columns", "Week of Month", each Date.WeekOfMonth([transaction_date]), Int64.Type),
+    #"Changed Type" = Table.TransformColumnTypes(#"Inserted Week of Month",{{"Week of Month", type text}}),
+    #"Replaced Value1" = Table.ReplaceValue(#"Changed Type","1","Week 1",Replacer.ReplaceText,{"Week of Month"}),
+    #"Replaced Value2" = Table.ReplaceValue(#"Replaced Value1","2","Week 2",Replacer.ReplaceText,{"Week of Month"}),
+    #"Replaced Value3" = Table.ReplaceValue(#"Replaced Value2","3","Week 3",Replacer.ReplaceText,{"Week of Month"}),
+    #"Replaced Value4" = Table.ReplaceValue(#"Replaced Value3","4","Week 4",Replacer.ReplaceText,{"Week of Month"}),
+    #"Replaced Value5" = Table.ReplaceValue(#"Replaced Value4","5","Week 5",Replacer.ReplaceText,{"Week of Month"}),
+    #"Filtered Rows" = Table.SelectRows(#"Replaced Value5", each true)
+in
+    #"Filtered Rows"
